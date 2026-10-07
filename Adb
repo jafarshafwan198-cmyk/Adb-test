@@ -1,0 +1,144 @@
+@echo off
+setlocal enabledelayedexpansion
+title ADB Menu
+color 0A
+
+:start
+cls
+echo ==========================================
+echo   Konekkan USB ke HP dan nyalain Debugger
+echo ==========================================
+echo.
+pause
+adb start-server >nul 2>&1
+
+:menu
+cls
+echo ==========================================
+echo                 MENU ADB
+echo ==========================================
+echo  1. Buka Aplikasi
+echo  2. Info Perangkat
+echo  3. Screenshot (simpan di folder ini)
+echo  4. Daftar Aplikasi Terinstall
+echo  5. Install APK
+echo  6. Uninstall Aplikasi
+echo  7. Reboot HP
+echo  8. Info Baterai
+echo  9. Tombol Home
+echo 10. (kosong - tambahin sendiri)
+echo 11. Keluar
+echo ==========================================
+set "pilih="
+set /p "pilih=Pilih nomor: "
+
+if "%pilih%"=="1" goto buka_app
+if "%pilih%"=="2" goto opsi2
+if "%pilih%"=="3" goto opsi3
+if "%pilih%"=="4" goto opsi4
+if "%pilih%"=="5" goto opsi5
+if "%pilih%"=="6" goto opsi6
+if "%pilih%"=="7" goto opsi7
+if "%pilih%"=="8" goto opsi8
+if "%pilih%"=="9" goto opsi9
+if "%pilih%"=="10" goto opsi10
+if "%pilih%"=="11" goto keluar
+echo Pilihan tidak valid.
+timeout /t 2 >nul
+goto menu
+
+:buka_app
+echo.
+set "nama="
+set /p "nama=Masukkan nama aplikasi (contoh: whatsapp): "
+set "pkg="
+for /f "tokens=2 delims=:" %%a in ('adb shell pm list packages ^| findstr /i /c:"%nama%"') do (
+    set "pkg=%%a"
+    goto buka_app_ketemu
+)
+echo.
+echo Ga ketemu
+echo.
+pause
+goto menu
+
+:buka_app_ketemu
+echo Ketemu: !pkg!
+adb shell monkey -p !pkg! -c android.intent.category.LAUNCHER 1 >nul 2>&1
+echo Membuka aplikasi...
+echo.
+pause
+goto menu
+
+:opsi2
+echo.
+adb shell getprop ro.product.model
+adb shell getprop ro.build.version.release
+adb shell getprop ro.product.manufacturer
+echo.
+pause
+goto menu
+
+:opsi3
+echo.
+adb shell screencap -p /sdcard/screen.png
+adb pull /sdcard/screen.png screenshot.png
+adb shell rm /sdcard/screen.png
+echo Tersimpan: screenshot.png
+echo.
+pause
+goto menu
+
+:opsi4
+echo.
+adb shell pm list packages -3
+echo.
+pause
+goto menu
+
+:opsi5
+echo.
+set "apk="
+set /p "apk=Masukkan path file APK: "
+adb install "%apk%"
+echo.
+pause
+goto menu
+
+:opsi6
+echo.
+set "nama="
+set /p "nama=Masukkan nama package (contoh: com.whatsapp): "
+adb uninstall %nama%
+echo.
+pause
+goto menu
+
+:opsi7
+echo.
+adb reboot
+echo HP direboot...
+timeout /t 2 >nul
+goto menu
+
+:opsi8
+echo.
+adb shell dumpsys battery
+echo.
+pause
+goto menu
+
+:opsi9
+adb shell input keyevent 3
+goto menu
+
+:opsi10
+echo.
+echo Belum diisi. Tambahin perintah adb kamu di sini.
+echo.
+pause
+goto menu
+
+:keluar
+adb kill-server >nul 2>&1
+exit
